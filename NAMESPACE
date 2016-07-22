@@ -1,0 +1,6 @@
+S3method(summary,icdglm)
+export(expand_data)
+export(icdglm)
+export(icdglm.fit)
+import(stats)
+import(Matrix)

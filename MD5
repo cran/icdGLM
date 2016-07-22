@@ -1,0 +1,15 @@
+734346e6f15135fda24847025a01dfec *DESCRIPTION
+fe12a78fa4e06dd5659c0f2c4159a585 *NAMESPACE
+d72e99e4ad4cc580b1fccff3e43b18f0 *R/datadoc.R
+9a0b6c9d5c9db52df7415feae43e8f80 *R/expand_data.R
+b1ce5d0edd73778df2128313a3d39f30 *R/icdglm.R
+d2ca84e39f33f7dfb361c8133e3dcfcf *R/icdglm.fit.R
+9bc09d2c1ca1b48f72a59d2dac088841 *R/summary.icdglm.R
+a4ad7ddf54b276dd34c28dfbee1505e9 *data/Leukemia.data.rda
+cf879752e8a23981aa3bf72501626ebc *data/TLI.data.rda
+42c40eb247237173cacbd3f34f17c0a4 *man/Leukemia.data.Rd
+eda1dbd35e91906565e49fc0450790d2 *man/TLI.data.Rd
+74a7012ba91b32a667bad78e8679d225 *man/expand_data.Rd
+04753c933b400dd2f144ab25a160f179 *man/icdglm.Rd
+df2ce207432a38705fc726a86cc775aa *man/icdglm.fit.Rd
+a0c1c0d0e44f41fc48f739955ab9fc7c *man/summary.icdglm.Rd

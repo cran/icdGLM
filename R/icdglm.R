@@ -1,0 +1,113 @@
+#' EM by the Method of Weights for Incomplete Data in GLMs
+#'
+#' This function applies the EM algorithm by the method of weights to incomplete data in a general linearized model.
+#'
+#' @usage icdglm(formula, family = binomial(link = "logit"), data, weights = rep.int(1, NROW(data)),
+#'               indicator = rep.int(0, NROW(data)), control = list(), model = TRUE)
+#' @param formula an object of class "formula" (or one that can be coerced to that class): a symbolic description of the model to be fitted.
+#' @param family a description of the error distribution and link function to be used in the model. This can be a character string naming a family function, a family function or the result of a call to a family function. (See \code{\link{family}} for details of family functions.)
+#' @param data an optional data frame, list or environment (or object coercible by as.data.frame to a data frame) containing the variables in the model. If not found in data, the variables are taken from environment(formula)
+#' @param weights a vector which attaches a weight to each observation. For incomplete data, this is obtained from \code{\link{expand_data}}.
+#' @param indicator a vector that indicates which observations belong to each other. This is obtained from \code{\link{expand_data}}.
+#' @param control a list of control characteristics used for the iteration process in \emph{icdglm.fit}. See \code{\link{glm.control}} for further information how this works. Default settings are: \code{epsilon = 1e-10, maxit = 100, trace = FALSE}.
+#' @param model a logical value indicating whether model frame should be included as a component of the returned value.
+#' @return \emph{icdglm} returns an object of class inheriting from "icdglm.fit", "glm" and "lm". The function \link{summary.icdglm} can be used to obtain a summary of the results.
+#'  \code{icdglm} returns a list with the following elements:
+#'  \itemize{
+#'  \item{x}{a matrix of numerics containing all independent variables}
+#'  \item{y}{a vector of numerics containing the dependent variable}
+#'  \item{new.weights}{the new weights obtained in the final iteration of \emph{icdglm.fit}}
+#'  \item{indicator}{a vector of integers indicating which observations belong to each other}
+#'  \item{glm.fit.data}{typical \code{glm.fit} output for the last iteration. See \code{\link{glm.fit}} for further information.}
+#'  \item{coefficients}{a named vector of coefficients}
+#'  \item{qr}{QR Decomposition of the information matrix}
+#'  \item{residuals}{the residuals of the final iteration}
+#'  \item{fitted.values}{the fitted mean values, obtained by transforming the linear predictors by the inverse of the link function.}
+#'  \item{rank}{the numeric rank of the fitted linear model}
+#'  \item{family}{the \link{family} object used.}
+#'  \item{linear.predictors}{the linear fit on link scale}
+#'  \item{deviance}{up to a constant, minus twice the maximized log-likelihood. Where sensible, the constant is chosen so that a saturated model has deviance zero.}
+#'  \item{aic}{see \link{glm}}
+#'  \item{null.deviance}{The deviance for the null model, comparable with deviance. The null model will include the offset, and an intercept if there is one in the model. Note that this will be incorrect if the link function depends on the data other than through the fitted mean: specify a zero offset to force a correct calculation.}
+#'  \item{iter}{an integer containing the number of iterations in \emph{icdglm.fit} before convergence}
+#'  \item{weights}{the working weights, that is the weights in the final iteration of the IWLS fit.}
+#'  \item{prior.weights}{the weights initially supplied, a vector of 1s if none were.}
+#'  \item{df.residual}{the residual degrees of freedom from the initial data set}
+#'  \item{df.null}{the residual degrees of freedom from initial data set for the null model}
+#'  \item{model}{model frame}
+#'  \item{converged}{TRUE if \emph{icdglm} converged.}
+#'  \item{call}{the match call}
+#'  \item{formula}{the formula supplied}
+#'  \item{terms}{the \emph{\link{terms}} object used}
+#'  \item{data}{the data argument}
+#'  \item{control}{the value of the \emph{control} argument used}
+#'  }
+#'
+#' @references Ibrahim, Joseph G. (1990). \emph{Incomplete Data in Generalized Linear Models}. Journal of the American Statistical Association, Vol.85, No. 411, pp. 765 - 769.
+#' @seealso \code{\link{expand_data}}, \code{\link{icdglm.fit}}, \code{\link{glm}}, \code{\link{glm.fit}}, \code{\link{glm.control}}, \code{\link{summary.glm}}
+#' @examples data(TLI.data)
+#'           complete.data <- expand_data(data = TLI.data[,1:3],
+#'                                        y = TLI.data[,4],
+#'                                        missing.x = 1:3,
+#'                                        value.set = 0:1)
+#'           example <- icdglm(y ~ x1 + x2 + x3, family = binomial(link = "logit"),
+#'                             data = complete.data$data, weights = complete.data$weights,
+#'                             indicator = complete.data$indicator)
+#'           summary(example)
+#' @export
+icdglm <- function(formula,
+                   family = binomial(link = "logit"),
+                   data,
+                   weights = rep.int(1, NROW(data)),
+                   indicator = rep.int(0, NROW(data)),
+                   control = list(),
+                   model = TRUE) {
+
+  call <- match.call()
+
+    if (is.character(family))
+      family <- get(family, mode = "function", envir = parent.frame())
+    if (is.function(family))
+      family <- family()
+    if (is.null(family$family)) {
+      print(family)
+      stop("'family' not recognized")
+    }
+
+    if (missing(data))
+        data <- environment(formula)
+
+  mf <- match.call()
+
+  m <- match(c("formula", "data", "weights", "indicator"), names(mf), 0L)
+
+  mf <- mf[c(1L, m)]
+
+  mf[[1L]] <- quote(model.frame)
+
+  mf <- eval(mf, parent.frame())
+
+  mt <- attr(mf, "terms")
+
+  Y <- model.response(mf, "any")
+
+  X <- model.matrix(mt, mf)
+
+  fit <- icdglm.fit(x = X, y = Y,
+                    weights = weights,
+                    indicator = indicator,
+                    family = family,
+                    control = control)
+
+  if (model)
+    fit$model <- mf
+
+  fit <- c(fit, list(call = call, formula = formula, terms = mt,
+                     data = data, control = control
+                     ))
+  class(fit) <- c(fit$class, c("icdglm"
+                               , "glm"
+                               , "lm"
+                               ))
+  return(fit)
+}
